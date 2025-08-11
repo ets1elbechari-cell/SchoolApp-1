@@ -1,0 +1,18 @@
+<!-- quiz_app/templates/modify_subject.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Modify Subject</title>
+</head>
+<body>
+    <h1>Modify Subject</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save Changes</button>
+    </form>
+    <a href="{% url 'subject_list' %}">Back to Subject List</a>
+</body>
+</html>

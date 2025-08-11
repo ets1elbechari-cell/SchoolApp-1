@@ -1,0 +1,24 @@
+<!-- quiz_app/templates/subject_list.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Subject List</title>
+</head>
+<body>
+    <h1>List of Subjects</h1>
+    <ul>
+        {% for subject in subjects %}
+            <li>
+                {{ subject.name }}
+                <a href="{% url 'modify_subject' subject.id %}">Modify</a>
+                <a href="{% url 'delete_subject' subject.id %}">Delete</a>
+            </li>
+        {% empty %}
+            <li>No subjects available.</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'add_subject' %}">Add New Subject</a>
+</body>
+</html>

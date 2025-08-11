@@ -1,0 +1,18 @@
+<!-- quiz_app/templates/add_subject.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Subject</title>
+</head>
+<body>
+    <h1>Add a New Subject</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add Subject</button>
+    </form>
+    <a href="{% url 'subject_list' %}">Back to Subject List</a>
+</body>
+</html>
