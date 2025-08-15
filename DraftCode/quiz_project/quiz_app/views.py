@@ -7,8 +7,7 @@ from .forms import SubjectForm  # You'll need to create a SubjectForm
 def say_hello(request):
     return HttpResponse('Hello world')
 def home(request):
-    return HttpResponse('<h1>Welcome to Quiz App</h1><a href="subject_list/">View Subjects</a>')
-
+    return render(request, 'home.html')  # Create a home.html template in your templates directory
 
 def add_subject(request):
     if request.method == 'POST':

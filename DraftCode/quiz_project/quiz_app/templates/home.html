@@ -1,0 +1,260 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Accueil — MyQuiz</title>
+
+  <style>
+    :root{
+      --bg-cream: #fbf0d9;       /* main background similar to screenshot */
+      --green-white: #edf2e9;   /* palette */
+      --jambalaya: #613c18;
+      --mantis: #6fbe5e;
+      --thatch: #b49c8c;
+      --card-radius: 14px;
+      --container-width: 1100px;
+      --hero-max-width: 820px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--bg-cream);
+      color: var(--jambalaya);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* top bar (logo left, nav center, action right) */
+    .topbar{
+      width:100%;
+      padding:22px 28px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      text-decoration:none;
+      color:var(--jambalaya);
+    }
+    .brand img{
+      height:64px;
+      width:64px;
+      object-fit:contain;
+    }
+    .brand .title{ font-weight:800; font-size:1.05rem; }
+
+    .nav {
+      display:flex;
+      gap:28px;
+      align-items:center;
+      justify-content:center;
+      flex:1;
+      margin-left: -40px; /* visually center nav since logo on left */
+    }
+    .nav a{
+      text-decoration:none;
+      color:var(--jambalaya);
+      font-weight:700;
+      padding:6px 2px;
+      transition: color .12s, transform .12s;
+    }
+    .nav a:hover{ color:var(--mantis); transform: translateY(-2px); }
+
+    .cta-login{
+      background: linear-gradient(180deg,var(--mantis), #57a84a);
+      color:white;
+      padding:12px 18px;
+      border-radius:12px;
+      text-decoration:none;
+      font-weight:800;
+      box-shadow: 0 8px 20px rgba(111,190,94,0.14);
+    }
+
+    /* hero */
+    .hero-wrap{
+      display:flex;
+      justify-content:center;
+      padding:18px 24px 36px;
+    }
+    .hero{
+      width:100%;
+      max-width: var(--hero-max-width);
+      text-align:center;
+      padding:36px 20px 56px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.5));
+      border-radius:24px;
+      box-shadow: 0 18px 48px rgba(16,16,16,0.06);
+    }
+
+    .hero-illustration{
+      width:140px;
+      height:140px;
+      margin:0 auto 18px;
+    }
+    .hero h1{
+      margin:8px 0 18px;
+      font-size:2.2rem;
+      line-height:1.05;
+      color:var(--jambalaya);
+      font-weight:900;
+    }
+    .hero p.lead{
+      margin:0 auto 22px;
+      max-width:720px;
+      color: rgba(97,60,24,0.85);
+      font-size:1.05rem;
+    }
+    .hero .primary-cta{
+      display:inline-block;
+      background: linear-gradient(180deg,var(--mantis), #57a84a);
+      color:white;
+      padding:16px 34px;
+      border-radius:12px;
+      font-weight:800;
+      text-decoration:none;
+      box-shadow: 0 12px 30px rgba(111,190,94,0.14);
+      margin-top:12px;
+    }
+
+    /* features row */
+    .features{
+      display:flex;
+      gap:18px;
+      justify-content:center;
+      margin-top:30px;
+      flex-wrap:wrap;
+      padding: 10px 8px 36px;
+    }
+    .feature{
+      background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.95));
+      width: 260px;
+      border-radius:14px;
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+      box-shadow: 0 10px 30px rgba(16,16,16,0.06);
+      text-decoration:none;
+      color:var(--jambalaya);
+    }
+    .feature .icon{
+      width:64px;
+      height:64px;
+      border-radius:12px;
+      background: linear-gradient(180deg,var(--green-white), #f1ecd8);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:28px;
+    }
+    .feature h3{ margin:0; font-size:1.05rem; font-weight:800; }
+    .feature p{ margin:0; color: rgba(97,60,24,0.8); font-size:0.95rem; text-align:center; }
+
+    /* page container to center everything */
+    .page-container{
+      max-width: var(--container-width);
+      margin: 0 auto 48px;
+      padding: 0 20px;
+    }
+
+    /* footer */
+    footer{
+      margin-top:18px;
+      padding:20px 0 60px;
+      color: rgba(97,60,24,0.9);
+    }
+    .footer-row{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; max-width:var(--container-width); margin:0 auto; padding:0 20px; }
+    .footer-left{ display:flex; gap:16px; align-items:center; }
+    .social a{ text-decoration:none; color:var(--jambalaya); margin-left:8px; }
+
+    /* responsive */
+    @media (max-width:900px){
+      .nav{ display:none } /* simplified for small screens */
+      .brand .title{ display:none }
+      .hero h1{ font-size:1.6rem; }
+      .features{ gap:12px; }
+      .feature{ width:48%; }
+    }
+    @media (max-width:520px){
+      .feature{ width:100% }
+      .hero{ padding:20px; border-radius:12px }
+      .hero-illustration{ width:110px; height:110px }
+    }
+  </style>
+</head>
+<body>
+  <!-- top bar -->
+  <div class="topbar">
+    <a class="brand" href="{% url 'home' %}">
+          <img src="{% static 'quiz_app/schoollogo.png' %}" alt="logo" style="height:64px">
+
+      <span class="title">MyQuiz</span>
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <a href="{% url 'home' %}">Accueil</a>
+      <a href="{% url 'subject_list' %}">Quiz</a>
+      <a href="">Tableau de bord</a>
+    </nav>
+
+    <a class="cta-login" href="">Connexion</a>
+  </div>
+
+  <!-- hero -->
+  <div class="hero-wrap">
+    <div class="page-container">
+      <section class="hero" aria-labelledby="hero-title">
+        <img class="hero-illustration" src="{% static 'quiz_app/image.png' %}"
+             alt="Illustration: tree and book" style="width: 300px;"/>
+
+        <h1 id="hero-title">Testez votre niveau et<br>progressez avec MyQuiz</h1>
+        <p class="lead">Lancez un quiz gratuit, suivez vos progrès et apprenez en vous amusant — tout est personnalisé pour vous.</p>
+
+        <a class="primary-cta" href="">Lancer un quiz gratuit</a>
+
+        <div class="features" role="list">
+          <a class="feature" href="#">
+            <div class="icon">🏆</div>
+            <h3>Gamifié</h3>
+            <p>Des récompenses et défis pour rester motivé.</p>
+          </a>
+          <a class="feature" href="#">
+            <div class="icon">👤</div>
+            <h3>Personnalisé</h3>
+            <p>Quiz adaptés à votre niveau et vos objectifs.</p>
+          </a>
+          <a class="feature" href="#">
+            <div class="icon">📈</div>
+            <h3>Suivi des progrès</h3>
+            <p>Visualisez votre progression au fil du temps.</p>
+          </a>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <footer>
+    <div class="footer-row">
+      <div class="footer-left">
+        <div>Contact</div>
+        <div style="margin-left:8px">Mentions légales</div>
+      </div>
+
+      <div class="social" aria-hidden="true">
+        <a href="#" title="Facebook">🔵</a>
+        <a href="#" title="Twitter">🔷</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

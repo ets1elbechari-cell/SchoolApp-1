@@ -1,253 +1,291 @@
 {% load static %}
-<!-- templates/includes/navbar.html -->
-<nav id="site-navbar" class="site-navbar" role="navigation" aria-label="Main navigation">
-  <div class="nav-inner">
+<!-- templates/includes/sidebar.html -->
+<nav id="site-sidebar" class="site-sidebar" aria-label="Main sidebar">
+  <div class="sidebar-inner">
     <a class="brand" href="{% url 'home' %}">
-      <!-- Replace with your logo file -->
-{% load static %}
-<img src="{% static 'schoollogo.png' %}" alt="Site logo" class="brand-img">
+      <img src="{% static 'quiz_app/schoollogo.png' %}" alt="Site logo" class="brand-img">
       <span class="brand-text">MyQuiz</span>
     </a>
 
-    <button id="nav-toggle" class="nav-toggle" aria-expanded="false" aria-label="Toggle navigation">
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">
-        <rect y="5" width="24" height="2" rx="1"></rect>
-        <rect y="11" width="24" height="2" rx="1"></rect>
-        <rect y="17" width="24" height="2" rx="1"></rect>
-      </svg>
-    </button>
+    <ul class="side-links" id="side-links">
+      <li>
+        <a data-test="home-nav" href="{% url 'home' %}" class="side-link {% if home_url == request.path %}active{% endif %}" {% if home_url == request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">🏠</span><span class="label">Home</span>
+        </a>
+      </li>
 
-    <ul class="nav-links" id="nav-links">
-      <li><a data-test="home-nav" href="" class="nav-link"><span class="icon" aria-hidden="true">📚</span><span class="label">Learn</span></a></li>
-      <li><a data-test="practice-nav" href="" class="nav-link"><span class="icon" aria-hidden="true">🧠</span><span class="label">Practice</span></a></li>
-      <li><a data-test="leaderboard-nav" href="" class="nav-link"><span class="icon" aria-hidden="true">🏆</span><span class="label">Leaderboards</span></a></li>
-      <li><a data-test="quests-nav" href="" class="nav-link"><span class="icon" aria-hidden="true">🗺️</span><span class="label">Quests</span></a></li>
-      <li><a data-test="shop-nav" href="" class="nav-link"><span class="icon" aria-hidden="true">🛍️</span><span class="label">Shop</span></a></li>
-      <li><a data-test="profile-tab" href="" class="nav-link profile-link">
-        <span class="avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
-        <span class="label">Profile</span>
-      </a></li>
-      <li class="nav-more">
-        <button id="more-btn" class="more-btn" aria-haspopup="true" aria-expanded="false">More ▾</button>
-        <div id="more-menu" class="more-menu" role="menu" aria-hidden="true">
-          <a role="menuitem" href="">Settings</a>
-          <a role="menuitem" href="">Help</a>
-          <a role="menuitem" href="">Log out</a>
-        </div>
+      <li>
+        <a data-test="learn-nav" href="{{ learn_url }}" class="side-link {% if learn_url in request.path %}active{% endif %}" {% if learn_url in request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">📚</span><span class="label">Learn</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="practice-nav" href="{{ practice_url }}" class="side-link {% if practice_url in request.path %}active{% endif %}" {% if practice_url in request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">🧠</span><span class="label">Practice</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="leaderboard-nav" href="{{ leaderboard_url }}" class="side-link {% if leaderboard_url in request.path %}active{% endif %}" {% if leaderboard_url in request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">🏆</span><span class="label">Leaderboards</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="shop-nav" href="{{ shop_url }}" class="side-link {% if shop_url in request.path %}active{% endif %}" {% if shop_url in request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">🛍️</span><span class="label">Shop</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="subjects-nav" href="{{ subjects_url }}" class="side-link {% if subjects_url in request.path or add_subject_url in request.path %}active{% endif %}" {% if subjects_url in request.path or add_subject_url in request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">📂</span><span class="label">Subjects</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="add-subject" href="{{ add_subject_url }}" class="side-link {% if add_subject_url == request.path %}active{% endif %}" {% if add_subject_url == request.path %}aria-current="page"{% endif %}>
+          <span class="icon" aria-hidden="true">➕</span><span class="label">Add Subject</span>
+        </a>
+      </li>
+
+      <li>
+        <a data-test="profile-tab" href="{{ profile_url }}" class="side-link profile-link {% if profile_url in request.path %}active{% endif %}" {% if profile_url in request.path %}aria-current="page"{% endif %}>
+          <span class="avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+          <span class="label">Profile</span>
+        </a>
       </li>
     </ul>
+    
+
+    <div class="sidebar-footer">
+      <button id="sidebar-toggle" class="sidebar-toggle" aria-expanded="true" aria-label="Collapse sidebar">◀</button>
+      <div class="copyright">© {{ now.year }}</div>
+    </div>
   </div>
 
-  <!-- Inline styles so this include is plug-and-play. Move to CSS file if you prefer. -->
   <style>
     :root{
       --green-white: #edf2e9;
       --jambalaya: #613c18;
       --mantis: #6fbe5e;
       --thatch: #b49c8c;
-      --nav-height: 64px;
-      --container-max: 1100px;
+
+      /* Sidebar width: roughly 1/4 of desktop but clamped between min/max */
+      --sidebar-width: clamp(220px, 24vw, 340px);
+      --sidebar-collapsed-width: 72px;
+      --content-gap: 24px;
+      --shadow: 0 12px 30px rgba(16,16,16,0.08);
       --radius: 10px;
     }
 
-    /* Reset-ish for navbar area */
-    .site-navbar{
+    /* Sidebar */
+    .site-sidebar{
       position: fixed;
-      top: 0;
       left: 0;
-      right: 0;
-      height: var(--nav-height);
+      top: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
       background: linear-gradient(180deg, #ffffff 0%, var(--green-white) 100%);
-      border-bottom: 1px solid rgba(97,60,24,0.06);
-      box-shadow: 0 6px 16px rgba(16,16,16,0.06);
+      border-right: 1px solid rgba(97,60,24,0.06);
+      box-shadow: var(--shadow);
       z-index: 9999;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      transition: width .22s ease, transform .22s ease;
+      overflow: hidden;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
     }
 
-    .nav-inner{
-      width: 100%;
-      max-width: var(--container-max);
-      margin: 0 auto;
-      padding: 8px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      justify-content: space-between;
+    .site-sidebar.collapsed{
+      width: var(--sidebar-collapsed-width);
+    }
+
+    .sidebar-inner{
+      display:flex;
+      flex-direction:column;
+      height:100%;
+      justify-content:space-between;
+      padding:18px 12px;
+      gap:10px;
     }
 
     /* Brand */
     .brand{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap:12px;
+      text-decoration:none;
+      color:var(--jambalaya);
+      font-weight:800;
+      margin-bottom:6px;
+    }
+    .brand-img{
+      width:56px;
+      height:56px;
+      border-radius:10px;
+      object-fit:cover;
+      background: linear-gradient(180deg,var(--mantis), var(--jambalaya));
+      box-shadow: 0 8px 16px rgba(97,60,24,0.06);
+      flex-shrink:0;
+    }
+    .brand-text{
+      font-size:1.05rem;
+      color:var(--jambalaya);
+      white-space:nowrap;
+    }
+
+    /* Links list */
+    .side-links{
+      list-style:none;
+      margin:8px 0 0 0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .side-link{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:10px 12px;
+      border-radius:8px;
       text-decoration:none;
       color:var(--jambalaya);
       font-weight:700;
+      transition: background .12s, transform .08s;
     }
-    .brand-img{
-      height:44px;
-      width:44px;
-      object-fit:cover;
-      border-radius:8px;
-      box-shadow:0 6px 12px rgba(97,60,24,0.06);
-      background: linear-gradient(180deg,var(--mantis), var(--jambalaya));
-    }
-    .brand-text{ font-size:1.05rem; color:var(--jambalaya) }
-
-    /* Toggle (mobile) */
-    .nav-toggle{
-      display:none;
-      background:transparent;
-      border:0;
-      padding:6px;
-      cursor:pointer;
-      color:var(--jambalaya);
-    }
-
-    /* Links */
-    .nav-links{
-      list-style:none;
-      margin:0;
-      padding:0;
-      display:flex;
-      gap:8px;
-      align-items:center;
-    }
-
-    .nav-link{
-      display:inline-flex;
-      gap:8px;
-      align-items:center;
-      padding:8px 12px;
-      border-radius:8px;
-      text-decoration:none;
-      color:var(--jambalaya);
-      font-weight:600;
-      transition:background .12s, transform .08s;
-      border:1px solid transparent;
-    }
-    .nav-link:hover{ background: rgba(111,190,94,0.06); transform: translateY(-2px); }
-    .nav-link[aria-current="page"], .nav-link.active{
+    .side-link:hover{ background: rgba(111,190,94,0.06); transform: translateX(2px); }
+    .side-link[aria-current="page"], .side-link.active{
       background: linear-gradient(180deg,var(--mantis), #57a84a);
       color: white;
       box-shadow: 0 8px 18px rgba(111,190,94,0.14);
     }
 
-    .icon{ font-size:16px; display:inline-block; width:20px; text-align:center; }
-    .label{ display:inline-block; min-width:48px; }
+    .icon{ font-size:18px; display:inline-block; width:28px; text-align:center; }
+    .label{ display:inline-block; white-space:nowrap; }
 
     /* avatar */
     .avatar{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      width:32px;
-      height:32px;
-      border-radius:6px;
+      width:36px;
+      height:36px;
+      border-radius:8px;
       background: linear-gradient(180deg,var(--thatch), rgba(0,0,0,0.03));
       color:var(--jambalaya);
       font-weight:700;
       font-size:0.95rem;
     }
 
-    /* More dropdown */
-    .nav-more{ position:relative; }
-    .more-btn{
-      background:transparent;
+    /* Footer */
+    .sidebar-footer{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      justify-content:space-between;
+      padding-top:8px;
+    }
+    .sidebar-toggle{
       border:0;
-      padding:8px 10px;
+      background:transparent;
+      font-weight:800;
       cursor:pointer;
-      font-weight:600;
       color:var(--jambalaya);
+      padding:6px 8px;
       border-radius:8px;
     }
-    .more-menu{
-      position:absolute;
-      right:0;
-      top:calc(var(--nav-height) + 6px);
-      min-width:160px;
-      background:white;
-      border-radius:10px;
-      box-shadow:0 10px 30px rgba(16,16,16,0.12);
-      border:1px solid rgba(16,16,16,0.04);
-      padding:8px;
+    .sidebar-toggle:hover{ background: rgba(97,60,24,0.04); }
+
+    /* Collapsed state: hide labels, shrink brand text */
+    .site-sidebar.collapsed .label,
+    .site-sidebar.collapsed .brand-text{
       display:none;
-      z-index:10000;
     }
-    .more-menu a{
-      display:block;
-      padding:8px 10px;
-      text-decoration:none;
-      color:var(--jambalaya);
-      border-radius:6px;
-      font-weight:600;
+    .site-sidebar.collapsed .brand-img{
+      width:44px;
+      height:44px;
     }
-    .more-menu a:hover{ background: rgba(97,60,24,0.04); }
-
-    /* Responsive */
-    @media (max-width:920px){
-      .label{ display:none; }               /* hide text for compactness */
-      .nav-toggle{ display:inline-flex; }  /* show hamburger */
+    .site-sidebar.collapsed .side-link{
+      justify-content:center;
+      padding:10px 6px;
     }
 
-    @media (max-width:720px){
-      .nav-links{
-        position:fixed;
-        right:0;
-        top:var(--nav-height);
-        background: linear-gradient(180deg, #fff, var(--green-white));
-        height: calc(100vh - var(--nav-height));
-        width:260px;
-        flex-direction:column;
-        gap:0;
-        padding:12px;
-        transform: translateX(100%);
-        transition: transform .2s ease;
-        box-shadow: -6px 18px 40px rgba(16,16,16,0.12);
-      }
-      .nav-links.open{
-        transform: translateX(0);
-      }
-      .nav-link{
+    /* Make sure page content doesn't sit under the sidebar.
+       You'll also set this in base.html body style (see instructions). */
+    main, #content {
+      transition: margin-left .22s ease;
+    }
+
+    /* Small screens: sidebar becomes a top drawer */
+    @media (max-width: 860px){
+      :root{ --sidebar-width: 100%; }
+      .site-sidebar{
+        height: var(--sidebar-width); /* using var so we can animate as top bar */
         width:100%;
-        padding:12px;
-        border-radius:8px;
+        left:0;
+        top:0;
+        right:0;
+        bottom:auto;
+        flex-direction:row;
+        align-items:center;
+        padding:10px;
       }
-      .brand-text{ display:none; }
+      .site-sidebar.collapsed{ height:56px; }
+      .sidebar-inner{ flex-direction:row; align-items:center; gap:10px; width:100%; justify-content:space-between; }
+      .side-links{
+        flex-direction:row;
+        gap:6px;
+        overflow:auto;
+        padding-left:6px;
+      }
+      .side-link{ padding:8px; }
+      /* On mobile we won't apply left margin to content; base template should reset padding-left on small screens */
     }
   </style>
 
   <script>
     (function(){
-      const toggle = document.getElementById('nav-toggle');
-      const links = document.getElementById('nav-links');
-      const moreBtn = document.getElementById('more-btn');
-      const moreMenu = document.getElementById('more-menu');
+      const sidebar = document.getElementById('site-sidebar');
+      const toggle = document.getElementById('sidebar-toggle');
+      const content = document.getElementById('content') || document.querySelector('main');
 
+      if(!sidebar) return;
+
+      // Set initial collapsed state based on localStorage
+      const stored = localStorage.getItem('sidebar-collapsed');
+      if(stored === 'true') sidebar.classList.add('collapsed');
+
+      // Update content margin to avoid overlay (desktop only)
+      function updateContentMargin(){
+        if(window.matchMedia('(min-width:861px)').matches){
+          const width = sidebar.classList.contains('collapsed')
+            ? getComputedStyle(document.documentElement).getPropertyValue('--sidebar-collapsed-width').trim()
+            : getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim();
+          if(content) content.style.marginLeft = width;
+        } else {
+          if(content) content.style.marginLeft = '';
+        }
+      }
+      updateContentMargin();
+
+      // Toggle button
       if(toggle){
         toggle.addEventListener('click', () => {
-          const open = links.classList.toggle('open');
-          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+          const collapsed = sidebar.classList.toggle('collapsed');
+          localStorage.setItem('sidebar-collapsed', collapsed ? 'true' : 'false');
+          toggle.textContent = collapsed ? '▶' : '◀';
+          updateContentMargin();
         });
       }
 
-      if(moreBtn){
-        moreBtn.addEventListener('click', (e) => {
-          const open = moreMenu.style.display !== 'block';
-          moreMenu.style.display = open ? 'block' : 'none';
-          moreBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
-        });
+      // If content exists but margin was empty on load, call again after fonts/images load
+      window.addEventListener('load', updateContentMargin);
 
-        // close more menu if click outside
-        document.addEventListener('click', (e) => {
-          if(!moreBtn.contains(e.target) && !moreMenu.contains(e.target)){
-            moreMenu.style.display = 'none';
-            moreBtn.setAttribute('aria-expanded', 'false');
-          }
-        });
-      }
+      // Update margin on resize
+      window.addEventListener('resize', updateContentMargin);
     })();
   </script>
 </nav>
