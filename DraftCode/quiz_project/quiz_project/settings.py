@@ -27,13 +27,15 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# settings.py
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = "94f965001@smtp-brevo.com"
-EMAIL_HOST_PASSWORD = "DVL752khCs0Wgnq1"
-DEFAULT_FROM_EMAIL = "ets1.elbechari@gmail.com"
+EMAIL_HOST_USER = "ets1.elbechari@gmail.com"
+EMAIL_HOST_PASSWORD = "mdvz hpmg mfyj dtwu"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 
 
