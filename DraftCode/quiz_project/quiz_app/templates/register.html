@@ -1,0 +1,100 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - MyQuiz</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        body {
+            background-color: #edf2e9;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .register-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+            width: 350px;
+            text-align: center;
+        }
+
+        .brand-img {
+            width: 80px;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #613c18;
+            margin-bottom: 20px;
+        }
+
+        form input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #b49c8c;
+            border-radius: 8px;
+        }
+
+        form button {
+            background-color: #6fbe5e;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        form button:hover {
+            background-color: #5aa84d;
+        }
+
+        .login-link {
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+
+        .login-link a {
+            color: #613c18;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <img src="{% static 'quiz_app/schoollogo.png' %}" alt="Site logo" class="brand-img">
+        <h2>Inscription</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
+            <input type="text" name="first_name" placeholder="Prénom" required>
+            <input type="text" name="last_name" placeholder="Nom" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password1" placeholder="Mot de passe" required>
+            <input type="password" name="password2" placeholder="Confirmez le mot de passe" required>
+            <button type="submit">S'inscrire</button>
+        </form>
+
+        <div class="login-link">
+            Déjà un compte ? <a href="{% url 'login' %}">Connectez-vous</a>
+        </div>
+    </div>
+
+</body>
+</html>
