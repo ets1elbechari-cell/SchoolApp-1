@@ -145,6 +145,7 @@ def connexion_view(request):
             messages.error(request, "Identifiants incorrects ❌")
 
     return render(request, "login.html")
+
 # def create_quiz(request):
 #     if request.method == 'POST':
 #         # Handle form submission
