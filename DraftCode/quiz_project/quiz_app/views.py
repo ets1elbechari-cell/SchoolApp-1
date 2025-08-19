@@ -63,19 +63,27 @@ def register_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
         email = request.POST.get("email")
-        password = request.POST.get("password")
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
+        password = request.POST.get("password")
+        password1 = request.POST.get("password1")
+        password2 = request.POST.get("password2")
 
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            is_active=False   # ⚠️ le compte reste inactif tant que pas confirmé
-        )
+        if password1 != password2:
+            messages.error(request, "Les mots de passe ne correspondent pas.")
+            return render(request, "register.html")
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "Nom d'utilisateur déjà pris.")
+            return render(request, "register.html")
 
+        user = User.objects.create_user(username=username, email=email,
+                                         password=password1,
+                                         first_name=first_name,
+                                         last_name=last_name)
+        user.is_active = False
+        user.save()
+        
         # Code de confirmation
         code = str(random.randint(100000, 999999))
         profile, _ = UserProfile.objects.get_or_create(user=user)
@@ -133,17 +141,12 @@ def connexion_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
-
         user = authenticate(request, username=username, password=password)
-        print("User:", user)  # Debug: See if user is authenticated
-
         if user is not None:
-            print("User is active:", user.is_active)  # Debug: Check if user is active
             login(request, user)
-            return redirect("home")
+            return redirect("home")  # Redirect after login
         else:
-            messages.error(request, "Identifiants incorrects ❌")
-
+            return render(request, "login.html", {"error": "Identifiants incorrects"})
     return render(request, "login.html")
 
 # def create_quiz(request):
