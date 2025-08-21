@@ -3,13 +3,29 @@ from django.contrib.auth.models import User
 
 
 
-class UserProfile(models.Model):
+class ConfirmUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     confirmation_code = models.CharField(max_length=6, blank=True, null=True)
 
     def __str__(self):
         return f"Profile({self.user.username})"
-    
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    confirmation_code = models.CharField(max_length=6, blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    school_level = models.ForeignKey('SchoolLevel', on_delete=models.CASCADE, blank=True, null=True)
+    filiere = models.ForeignKey('Filiere', on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return f"Profile({self.user.username})"
+
+class Filiere(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
 class SchoolLevel(models.Model):
     level_name = models.CharField(max_length=50)
 
