@@ -10,6 +10,7 @@ import random
 from django.core.mail import send_mail
 from .models import UserProfile
 from django.contrib import messages
+from django.contrib.auth import logout  
 
 
 def say_hello(request):
@@ -148,6 +149,10 @@ def connexion_view(request):
         else:
             return render(request, "login.html", {"error": "Identifiants incorrects"})
     return render(request, "login.html")
+
+def logout_view(request):
+    logout(request)
+    return redirect("home")
 
 # def create_quiz(request):
 #     if request.method == 'POST':

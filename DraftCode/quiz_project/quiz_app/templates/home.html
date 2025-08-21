@@ -299,9 +299,9 @@
               <li><a href="#">Profil</a></li>
               <li><a href="#">Paramètres</a></li>
               <li>
-                <form method="post" action="#">
+                <form method="post" action="{% url 'logout' %}">
                   {% csrf_token %}
-                  <button type="submit" class="logout-btn">Se déconnecter</button>
+                  <button type="submit" class="logout-btn" >Se déconnecter</button>
                 </form>
               </li>
             </ul>

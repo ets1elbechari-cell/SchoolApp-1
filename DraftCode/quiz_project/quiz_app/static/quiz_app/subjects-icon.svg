@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Icône liste des matières">
+  <!-- Palette: Green White #edf2e9, Jambalaya #613c18, Mantis #6fbe5e, Thatch #b49c8c -->
+  <rect width="128" height="128" rx="18" fill="#edf2e9"/>
+  <!-- Book -->
+  <g transform="translate(18,20)">
+    <rect x="0" y="6" width="76" height="64" rx="6" fill="#ffffff" stroke="#613c18" stroke-width="2"/>
+    <rect x="0" y="6" width="12" height="64" rx="3" fill="#613c18"/>
+    <!-- page lines -->
+    <g fill="none" stroke="#b49c8c" stroke-width="1.6" stroke-linecap="round">
+      <line x1="18" y1="18" x2="66" y2="18"/>
+      <line x1="18" y1="26" x2="66" y2="26"/>
+      <line x1="18" y1="34" x2="66" y2="34"/>
+      <line x1="18" y1="42" x2="66" y2="42"/>
+    </g>
+  </g>
+
+  <!-- Checklist / bullets -->
+  <g transform="translate(22,22)">
+    <!-- bullet 1 -->
+    <circle cx="96" cy="36" r="6" fill="#6fbe5e"/>
+    <path d="M100 33 L110 45" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- bullet 2 -->
+    <circle cx="96" cy="56" r="6" fill="#6fbe5e"/>
+    <path d="M100 53 L110 65" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- label lines -->
+    <rect x="78" y="26" width="14" height="4" rx="2" fill="#613c18" opacity="0.06"/>
+    <rect x="78" y="46" width="14" height="4" rx="2" fill="#613c18" opacity="0.06"/>
+  </g>
+
+  <!-- small accent -->
+  <circle cx="96" cy="92" r="12" fill="#613c18" opacity="0.06"/>
+</svg>

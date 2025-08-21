@@ -50,12 +50,29 @@
         </a>
       </li>
 
-      <li>
-        <a data-test="profile-tab" href="{{ profile_url }}" class="side-link profile-link {% if profile_url in request.path %}active{% endif %}" {% if profile_url in request.path %}aria-current="page"{% endif %}>
-          <span class="avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
-          <span class="label">Profile</span>
-        </a>
-      </li>
+      <li class="profile-container">
+  <a href="javascript:void(0)" class="profile-toggle">
+     
+    <!-- Avatar circle with first letter -->
+    <span class="avatar" aria-hidden="true">
+      {{ request.user.username|slice:":1"|upper }}
+    </span>
+
+    <!-- Full name -->
+    <span class="label">
+      {{ request.user.first_name }} {{ request.user.last_name }}
+    </span>
+  </a>
+
+  <!-- Dropdown menu -->
+  <ul class="profile-Menu">
+    <li><a class="dropdown-item" href="">Mon profil</a></li>
+    <li><a class="dropdown-item" href="">Paramètres</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><a class="dropdown-item" href="">Déconnexion</a></li>
+  </ul>
+</li>
+
     </ul>
     
 
@@ -218,6 +235,65 @@
     main, #content {
       transition: margin-left .22s ease;
     }
+    .profile-container {
+  position: relative;
+  list-style: none;
+}
+
+.profile-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--jambalaya, #333);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-toggle:hover {
+  color: var(--mantis, #57a84a);
+}
+
+.avatar {
+  background: var(--mantis, #57a84a);
+  color: #fff;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Dropdown menu on the right */
+.profile-menu {
+  position: absolute;
+  top: 0;              /* aligné avec le haut du bouton */
+  left: 100%;          /* décalé à droite du bouton */
+  margin-left: 10px;   /* petit espace */
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  list-style: none;
+  padding: 8px 0;
+  display: none;
+  min-width: 160px;
+  z-index: 1000;
+}
+
+.profile-menu li a {
+  display: block;
+  padding: 10px 16px;
+  text-decoration: none;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.profile-menu li a:hover {
+  background: #f5f5f5;
+}
+
 
     /* Small screens: sidebar becomes a top drawer */
     @media (max-width: 860px){
@@ -287,5 +363,25 @@
       // Update margin on resize
       window.addEventListener('resize', updateContentMargin);
     })();
+    
+document.addEventListener("DOMContentLoaded", function () {
+  const toggle = document.querySelector(".profile-toggle");
+  const menu = document.querySelector(".profile-menu");
+
+  if (toggle && menu) {
+    toggle.addEventListener("click", function (e) {
+      e.preventDefault();
+      menu.style.display = menu.style.display === "block" ? "none" : "block";
+    });
+
+    // ferme si clic ailleurs
+    document.addEventListener("click", function (e) {
+      if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+        menu.style.display = "none";
+      }
+    });
+  }
+});
+
   </script>
 </nav>
