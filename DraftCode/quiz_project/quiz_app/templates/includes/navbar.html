@@ -14,11 +14,13 @@
         </a>
       </li>
 
-      <li>
-        <a data-test="learn-nav" href="{{ learn_url }}" class="side-link {% if learn_url in request.path %}active{% endif %}" {% if learn_url in request.path %}aria-current="page"{% endif %}>
-          <span class="icon" aria-hidden="true">📚</span><span class="label">Learn</span>
-        </a>
-      </li>
+     <li>
+    <a data-test="learn-nav" href="{% url 'subject_choose' %}" class="side-link">
+        <span class="icon" aria-hidden="true">📚</span>
+        <span class="label">Take Quiz</span>
+    </a>
+</li>
+
 
       <li>
         <a data-test="practice-nav" href="{{ practice_url }}" class="side-link {% if practice_url in request.path %}active{% endif %}" {% if practice_url in request.path %}aria-current="page"{% endif %}>

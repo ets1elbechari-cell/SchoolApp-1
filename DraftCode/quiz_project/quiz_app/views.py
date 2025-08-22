@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 import random
 from django.core.mail import send_mail
-from .models import UserProfile, Filiere, SchoolLevel
+from .models import UserProfile, Filiere, SchoolLevel,StudentProgress,Question
 from django.contrib import messages
 from django.contrib.auth import logout  
 
@@ -186,7 +186,80 @@ def logout_view(request):
     logout(request)
     return redirect("home")
 
-# def create_quiz(request):
+def get_next_question(student, subject, school_level):
+    """
+    Returns the next question for the student following the learning path:
+    1. Filter by subject and school level
+    2. Order by difficulty (Easy -> Medium -> Hard)
+    3. Exclude already answered questions
+    """
+    # Step 1: Get all questions for this subject and level
+    questions = Question.objects.filter(
+        subject=subject,
+        school_level=school_level
+    ).order_by('difficulty')
+
+    # Step 2: Exclude questions already answered by the student
+    answered_question_ids = StudentProgress.objects.filter(
+        student=student
+    ).values_list('question_id', flat=True)
+
+    unanswered_questions = questions.exclude(id__in=answered_question_ids)
+
+    # Step 3: Return the first unanswered question, or None if finished
+    return unanswered_questions.first()
+
+def take_quiz(request, subject_id):
+    student = request.user
+    subject = Subject.objects.get(id=subject_id)
+    level = UserProfile.objects.get(user=student).school_level
+
+    question = get_next_question(student, subject, level)
+
+    if not question:
+        return redirect("quiz_finished", subject_id=subject.id)
+
+    return render(request, "take_quiz.html", {"question": question})
+
+def quiz_finished(request, subject_id):
+    student = request.user
+    subject = Subject.objects.get(id=subject_id)
+    school_level = UserProfile.objects.get(user=student).school_level
+
+    total_questions = Question.objects.filter(subject=subject, school_level=school_level).count()
+    correct_answers = StudentProgress.objects.filter(
+        student=student, 
+        question__subject=subject, 
+        question__school_level=school_level, 
+        answered_correctly=True
+    ).count()
+
+    return render(request, "quiz_finished.html", {
+        "total_questions": total_questions,
+        "correct_answers": correct_answers,
+        "subject": subject,
+        "level": school_level
+    })
+
+
+def submit_answer(request, question_id):
+    student = request.user
+    question = Question.objects.get(id=question_id)
+    answer = request.POST.get("answer")  # 'A', 'B', or 'C'
+    correct = (answer == question.correct_option)
+
+    StudentProgress.objects.update_or_create(
+        student=student,
+        question=question,
+        defaults={"answered_correctly": correct}
+    )
+
+    # Redirect to next question
+    return redirect("take_quiz", subject_id=question.subject.id)
+
+def subject_choose(request):
+    subjects = Subject.objects.all()
+    return render(request, "subject_choose.html", {"subjects": subjects})
 #     if request.method == 'POST':
 #         # Handle form submission
 #         subject_id = request.POST.get('subject')

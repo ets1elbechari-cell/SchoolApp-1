@@ -92,3 +92,15 @@ class QuizResult(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s Result for {self.quiz}"
+
+class StudentProgress(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    answered_correctly = models.BooleanField(default=False)
+    answered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('student', 'question')  # avoid duplicates
+
+    def __str__(self):
+        return f"{self.student.username} - {self.question.id} - {self.answered_correctly}"

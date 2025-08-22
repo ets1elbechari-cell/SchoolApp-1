@@ -1,0 +1,14 @@
+{% load static %}
+{% block content %}
+<div style="max-width:600px;margin:50px auto;">
+    <h2>Choose a Subject</h2>
+    <ul>
+        {% for subject in subjects %}
+            <li>
+                <a href="{% url 'take_quiz' subject.id %}">{{ subject.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+

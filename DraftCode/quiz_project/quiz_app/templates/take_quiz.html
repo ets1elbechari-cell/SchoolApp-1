@@ -1,0 +1,43 @@
+{% load static %}
+
+{% block content %}
+<div class="quiz-container" style="max-width:600px;margin:50px auto;padding:20px;border:1px solid #ccc;border-radius:10px;">
+  {% include 'includes/navbar.html' %}
+    <h2>Question</h2>
+
+    <p>{{ question.question }}</p>
+
+    <form method="post" action="{% url 'submit_answer' question.id %}">
+        {% csrf_token %}
+
+        {% if question.option_a %}
+        <div>
+            <input type="radio" id="option_a" name="answer" value="A" required>
+            <label for="option_a">{{ question.option_a }}</label>
+        </div>
+        {% endif %}
+
+        {% if question.option_b %}
+        <div>
+            <input type="radio" id="option_b" name="answer" value="B">
+            <label for="option_b">{{ question.option_b }}</label>
+        </div>
+        {% endif %}
+
+        {% if question.option_c %}
+        <div>
+            <input type="radio" id="option_c" name="answer" value="C">
+            <label for="option_c">{{ question.option_c }}</label>
+        </div>
+        {% endif %}
+
+        <button type="submit" style="margin-top:15px;padding:10px 20px;background-color:#4CAF50;color:white;border:none;border-radius:5px;">Submit Answer</button>
+    </form>
+
+    {% if question.explanation %}
+    <div style="margin-top:20px;padding:10px;background-color:#f9f9f9;border-left:4px solid #2196F3;">
+        <strong>Tip/Explanation:</strong> {{ question.explanation }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

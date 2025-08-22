@@ -13,5 +13,9 @@ urlpatterns = [
     path("register/", views.register_view, name="register"),
     path("confirm_email/", views.confirm_email_view, name="confirm_email"),
     path("logout/", views.logout_view, name="logout"),
+    path("take_quiz/<int:subject_id>/", views.take_quiz, name="take_quiz"),
+    path("submit_answer/<int:question_id>/", views.submit_answer, name="submit_answer"),
+    path("quiz_finished/<int:subject_id>/", views.quiz_finished, name="quiz_finished"),
+    path("subject_choose/", views.subject_choose, name="subject_choose"),
     # Add other paths as needed
 ]
