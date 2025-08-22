@@ -45,11 +45,21 @@ class Subject(models.Model):
 class Question(models.Model):
     question = models.TextField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    difficulty = models.IntegerField(choices=[(1, 'Easy'), (2, 'Medium'), (3, 'Hard')])
     school_level = models.ForeignKey(SchoolLevel, on_delete=models.CASCADE)
 
+    difficulty = models.CharField(
+        max_length=10,
+        choices=[('Easy', 'Easy'), ('Medium', 'Medium'), ('Hard', 'Hard')]
+    )
+
+    option_a = models.CharField(max_length=255,blank=True, null=True)
+    option_b = models.CharField(max_length=255,blank=True, null=True)
+    option_c = models.CharField(max_length=255,blank=True, null=True)
+    correct_option = models.CharField(max_length=1, choices=[('A','A'),('B','B'),('C','C')],blank=True, null=True)
+    explanation = models.TextField(blank=True, null=True)
+
     def __str__(self):
-        return self.text
+        return self.question[:50]
 
 
 class Answer(models.Model):
