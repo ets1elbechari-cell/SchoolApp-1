@@ -8,7 +8,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 import random
 from django.core.mail import send_mail
-from .models import UserProfile
+from .models import UserProfile, Filiere, SchoolLevel
 from django.contrib import messages
 from django.contrib.auth import logout  
 
@@ -62,34 +62,62 @@ def delete_subject(request, subject_id):
 
 def register_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
         email = request.POST.get("email")
         first_name = request.POST.get("first_name")
         last_name = request.POST.get("last_name")
-        password = request.POST.get("password")
+        date_of_birth = request.POST.get("date_of_birth")  # corrige le nom selon ton input
+        gender = request.POST.get("gender")
+        school_level = request.POST.get("school_level")  # corrige le name du select
+        filiere_id = request.POST.get("filiere")
+
+        try:
+            schoollevel_instance = SchoolLevel.objects.get(id=school_level)
+        except SchoolLevel.DoesNotExist:
+            messages.error(request, "Niveau scolaire invalide.")
+            return render(request, "register.html")
+
+        try:
+            filiere_instance = Filiere.objects.get(id=filiere_id)
+        except Filiere.DoesNotExist:
+            messages.error(request, "Filière invalide.")
+            return render(request, "register.html")
+
+        password = request.POST.get("password")   # <-- tu récupères ça
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
 
         if password1 != password2:
             messages.error(request, "Les mots de passe ne correspondent pas.")
             return render(request, "register.html")
-        
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Nom d'utilisateur déjà pris.")
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "Email déjà pris.")
             return render(request, "register.html")
 
-        user = User.objects.create_user(username=username, email=email,
-                                         password=password1,
-                                         first_name=first_name,
-                                         last_name=last_name)
+        # Création de l'utilisateur
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password1,
+            first_name=first_name,
+            last_name=last_name
+        )
         user.is_active = False
         user.save()
-        
-        # Code de confirmation
-        code = str(random.randint(100000, 999999))
-        profile, _ = UserProfile.objects.get_or_create(user=user)
-        profile.confirmation_code = code
+
+        # Création du profil utilisateur
+        profile = UserProfile.objects.create(
+            user=user,
+            date_of_birth=date_of_birth,
+            gender=gender,
+            school_level=schoollevel_instance,
+            filiere=filiere_instance,
+              # direct ici
+            )
+        code=str(random.randint(100000, 999999))
+        profile.confirmation_code=code
         profile.save()
+
 
         # Envoi email
         send_mail(
@@ -104,7 +132,11 @@ def register_view(request):
         # Redirection vers page de confirmation
         return redirect("confirm_email")  
 
-    return render(request, "register.html")
+    # GET → affichage du formulaire
+    levels = SchoolLevel.objects.all()
+    filieres = Filiere.objects.all()
+    return render(request, "register.html", {"levels": levels, "filieres": filieres})
+
 
 
 from django.contrib.auth import login

@@ -16,21 +16,23 @@ class UserProfile(models.Model):
     date_of_birth = models.DateField(blank=True, null=True)
     school_level = models.ForeignKey('SchoolLevel', on_delete=models.CASCADE, blank=True, null=True)
     filiere = models.ForeignKey('Filiere', on_delete=models.CASCADE, blank=True, null=True)
+    gender = models.CharField(max_length=10, choices=[('M', 'Male'), ('F', 'Female')], blank=True, null=True)
 
     def __str__(self):
         return f"Profile({self.user.username})"
-
-class Filiere(models.Model):
-    name = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.name
-
+    
 class SchoolLevel(models.Model):
     level_name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.level_name
+
+class Filiere(models.Model):
+    name = models.CharField(max_length=100)
+    schoollevel = models.ForeignKey(SchoolLevel, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Subject(models.Model):

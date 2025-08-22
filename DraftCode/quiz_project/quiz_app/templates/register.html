@@ -43,7 +43,13 @@
             border: 1px solid #b49c8c;
             border-radius: 8px;
         }
-
+        form select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #b49c8c;
+            border-radius: 8px;
+        }
         form button {
             background-color: #6fbe5e;
             color: white;
@@ -79,12 +85,31 @@
     <div class="register-container">
         <img src="{% static 'quiz_app/schoollogo.png' %}" alt="Site logo" class="brand-img">
         <h2>Inscription</h2>
-
+        
         <form method="post">
             {% csrf_token %}
-            <input type="text" name="username" placeholder="Nom d'utilisateur" required>
             <input type="text" name="first_name" placeholder="Prénom" required>
             <input type="text" name="last_name" placeholder="Nom" required>
+            <select id="levelSelect" name="school_level" >
+              <option value="">-- Choisir un niveau --</option>
+              {% for lvl in levels %}
+               <option value="{{ lvl.id }}">{{ lvl.level_name }}</option>
+              {% endfor %}
+            </select>
+
+            <select id="filiereSelect" name="filiere" >
+              <option value="">-- Choisir une filière --</option>
+              {% for f in filieres %}
+                <option value="{{ f.id }}" data-level="{{ f.schoollevel.id }}">{{ f.name }}</option>
+              {% endfor %}
+            </select>
+            <input name="date_of_birth" type="date" placeholder="Date de naissance" required>
+
+            <select name="gender">
+                <option value="">-- Choisir --</option>
+                <option value="Masculin">Masculin</option>
+                <option value="Féminin">Féminin</option>
+            </select>
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password1" placeholder="Mot de passe" required>
             <input type="password" name="password2" placeholder="Confirmez le mot de passe" required>
@@ -95,6 +120,24 @@
             Déjà un compte ? <a href="{% url 'login' %}">Connectez-vous</a>
         </div>
     </div>
+
+    <script>
+document.addEventListener('DOMContentLoaded', function(){
+  const levelSelect = document.getElementById('levelSelect');
+  const filiereSelect = document.getElementById('filiereSelect');
+  const allFilieres = Array.from(filiereSelect.querySelectorAll("option[data-level]"));
+
+  levelSelect.addEventListener('change', function(){
+    const levelId = this.value;
+    filiereSelect.innerHTML = '<option value="">-- Choisir une filière --</option>';
+    allFilieres.forEach(opt => {
+      if (opt.dataset.level === levelId) {
+        filiereSelect.appendChild(opt.cloneNode(true));
+      }
+    });
+  });
+});
+</script>
 
 </body>
 </html>
