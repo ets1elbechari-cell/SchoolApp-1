@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from .models import UserProfile, Filiere, SchoolLevel,StudentProgress,Question
 from django.contrib import messages
 from django.contrib.auth import logout  
+from .engine import initialize_learner, pick_target_topic, choose_difficulty, candidate_item, record_attempt
 
 
 def say_hello(request):
@@ -186,41 +187,31 @@ def logout_view(request):
     logout(request)
     return redirect("home")
 
-def get_next_question(student, subject, school_level):
-    """
-    Returns the next question for the student following the learning path:
-    1. Filter by subject and school level
-    2. Order by difficulty (Easy -> Medium -> Hard)
-    3. Exclude already answered questions
-    """
-    # Step 1: Get all questions for this subject and level
-    questions = Question.objects.filter(
-        subject=subject,
-        school_level=school_level
-    ).order_by('difficulty')
-
-    # Step 2: Exclude questions already answered by the student
-    answered_question_ids = StudentProgress.objects.filter(
-        student=student
-    ).values_list('question_id', flat=True)
-
-    unanswered_questions = questions.exclude(id__in=answered_question_ids)
-
-    # Step 3: Return the first unanswered question, or None if finished
-    return unanswered_questions.first()
 
 def take_quiz(request, subject_id):
     student = request.user
-    subject = Subject.objects.get(id=subject_id)
-    level = UserProfile.objects.get(user=student).school_level
+    subject = get_object_or_404(Subject, id=subject_id)
+    level = get_object_or_404(UserProfile, user=student).school_level
 
-    question = get_next_question(student, subject, level)
+    # 🔹 Initialize learner topics if not done
+    initialize_learner(student, subject)
+
+    # 🔹 Pick adaptive target topic
+    lt = pick_target_topic(student, subject)
+    if not lt:
+        return redirect("quiz_finished", subject_id=subject.id)
+
+    # 🔹 Choose difficulty based on mastery
+    difficulties = choose_difficulty(lt.p_mastery)
+
+    # 🔹 Pick a candidate question
+    question = candidate_item(student, lt.topic, difficulties)
 
     if not question:
         return redirect("quiz_finished", subject_id=subject.id)
 
-    return render(request, "take_quiz.html", {"question": question})
-
+    return render(request, "take_quiz.html", {"question": question, "subject": subject, "level": level})
+    
 def quiz_finished(request, subject_id):
     student = request.user
     subject = Subject.objects.get(id=subject_id)
@@ -244,22 +235,29 @@ def quiz_finished(request, subject_id):
 
 def submit_answer(request, question_id):
     student = request.user
-    question = Question.objects.get(id=question_id)
+    question = get_object_or_404(Question, id=question_id)
     answer = request.POST.get("answer")  # 'A', 'B', or 'C'
     correct = (answer == question.correct_option)
 
+    # ✅ Keep your existing progress model
     StudentProgress.objects.update_or_create(
         student=student,
         question=question,
         defaults={"answered_correctly": correct}
     )
 
-    # Redirect to next question
+    # ✅ Update adaptive stats & mastery
+    record_attempt(student, question, correct)
+
+    # Redirect to next adaptive question
     return redirect("take_quiz", subject_id=question.subject.id)
 
 def subject_choose(request):
     subjects = Subject.objects.all()
     return render(request, "subject_choose.html", {"subjects": subjects})
+
+
+
 #     if request.method == 'POST':
 #         # Handle form submission
 #         subject_id = request.POST.get('subject')

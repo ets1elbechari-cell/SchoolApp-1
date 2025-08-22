@@ -104,3 +104,28 @@ class StudentProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.question.id} - {self.answered_correctly}"
+    
+class Topic(models.Model):
+    name = models.CharField(max_length=100)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    prereqs = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="unlocks")
+
+    def __str__(self):
+        return self.name
+
+
+class LearnerTopic(models.Model):
+    learner = models.ForeignKey(User, on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
+    p_mastery = models.FloatField(default=0.20)  # initial mastery
+    unlocked = models.BooleanField(default=False)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+
+
+class ItemStats(models.Model):
+    learner = models.ForeignKey(User, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    shown_cnt = models.IntegerField(default=0)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    correct_cnt = models.IntegerField(default=0)
+    incorrect_cnt = models.IntegerField(default=0)
