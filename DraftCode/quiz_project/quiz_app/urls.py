@@ -17,5 +17,6 @@ urlpatterns = [
     path("submit_answer/<int:question_id>/", views.submit_answer, name="submit_answer"),
     path("quiz_finished/<int:subject_id>/", views.quiz_finished, name="quiz_finished"),
     path("subject_choose/", views.subject_choose, name="subject_choose"),
+    path("restart_quiz/<int:subject_id>/", views.restart_quiz, name="restart_quiz"),
     # Add other paths as needed
 ]

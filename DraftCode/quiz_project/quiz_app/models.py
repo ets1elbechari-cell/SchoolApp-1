@@ -41,11 +41,22 @@ class Subject(models.Model):
     def __str__(self):
         return self.name
 
+class Topic(models.Model):
+    name = models.CharField(max_length=100)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    prereqs = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="unlocks")
+
+    def __str__(self):
+        return self.name
+
+
 
 class Question(models.Model):
     question = models.TextField()
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     school_level = models.ForeignKey(SchoolLevel, on_delete=models.CASCADE)
+    topic = models.ForeignKey(Topic, on_delete=models.CASCADE, null=True, blank=True)  # 👈 AJOUT ICI
+
 
     difficulty = models.CharField(
         max_length=10,
@@ -104,21 +115,14 @@ class StudentProgress(models.Model):
 
     def __str__(self):
         return f"{self.student.username} - {self.question.id} - {self.answered_correctly}"
-    
-class Topic(models.Model):
-    name = models.CharField(max_length=100)
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
-    prereqs = models.ManyToManyField("self", symmetrical=False, blank=True, related_name="unlocks")
 
-    def __str__(self):
-        return self.name
 
 
 class LearnerTopic(models.Model):
     learner = models.ForeignKey(User, on_delete=models.CASCADE)
     topic = models.ForeignKey(Topic, on_delete=models.CASCADE)
     p_mastery = models.FloatField(default=0.20)  # initial mastery
-    unlocked = models.BooleanField(default=False)
+    unlocked = models.BooleanField(default=True)
     last_seen_at = models.DateTimeField(null=True, blank=True)
 
 

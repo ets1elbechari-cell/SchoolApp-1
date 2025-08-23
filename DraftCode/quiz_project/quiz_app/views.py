@@ -1,17 +1,19 @@
 from pyexpat.errors import messages
+from turtle import lt
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-from .models import Subject
 from .forms import SubjectForm  # You'll need to create a SubjectForm
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 import random
 from django.core.mail import send_mail
-from .models import UserProfile, Filiere, SchoolLevel,StudentProgress,Question
+from .models import UserProfile, Filiere, SchoolLevel,StudentProgress
 from django.contrib import messages
 from django.contrib.auth import logout  
 from .engine import initialize_learner, pick_target_topic, choose_difficulty, candidate_item, record_attempt
+from .models import Subject, Question, StudentProgress, LearnerTopic, ItemStats
+
 
 
 def say_hello(request):
@@ -191,31 +193,61 @@ def logout_view(request):
 def take_quiz(request, subject_id):
     student = request.user
     subject = get_object_or_404(Subject, id=subject_id)
-    level = get_object_or_404(UserProfile, user=student).school_level
 
-    # 🔹 Initialize learner topics if not done
+    # ensure user profile and school level exist
+    try:
+        level = UserProfile.objects.get(user=student).school_level
+    except UserProfile.DoesNotExist:
+        level = None
+
+    # create per-user topics/stats if missing
     initialize_learner(student, subject)
 
-    # 🔹 Pick adaptive target topic
+    # pick topic
     lt = pick_target_topic(student, subject)
+
+    # FALLBACK: if no adaptive topic found, pick ANY topic for subject
     if not lt:
-        return redirect("quiz_finished", subject_id=subject.id)
+        lt = LearnerTopic.objects.filter(learner=student, topic__subject=subject).order_by("last_seen_at").first()
 
-    # 🔹 Choose difficulty based on mastery
+    if not lt:
+        # No topics at all → show friendly message
+        return render(request, "quiz_finished.html", {
+            "message": "No topics/questions available for this subject yet.",
+            "subject": subject
+        })
+
     difficulties = choose_difficulty(lt.p_mastery)
-
-    # 🔹 Pick a candidate question
     question = candidate_item(student, lt.topic, difficulties)
 
+    # FINAL fallback: if still no question, try any question of subject & level
     if not question:
-        return redirect("quiz_finished", subject_id=subject.id)
+        if level:
+            question = Question.objects.filter(subject=subject, school_level=level).first()
+        else:
+            question = Question.objects.filter(subject=subject).first()
 
+    if not question:
+        return render(request, "quiz_finished.html", {
+            "message": "No questions found for this subject + your level.",
+            "subject": subject
+        })
+
+    # render question
     return render(request, "take_quiz.html", {"question": question, "subject": subject, "level": level})
     
 def quiz_finished(request, subject_id):
     student = request.user
     subject = Subject.objects.get(id=subject_id)
     school_level = UserProfile.objects.get(user=student).school_level
+
+    if request.method == "POST" and "restart" in request.POST:
+        # 🗑️ Reset progress for this subject
+        StudentProgress.objects.filter(student=student, question__subject=subject).delete()
+        LearnerTopic.objects.filter(learner=student, topic__subject=subject).delete()
+        return redirect("take_quiz", subject_id=subject.id)
+    
+    initialize_learner(student, subject)
 
     total_questions = Question.objects.filter(subject=subject, school_level=school_level).count()
     correct_answers = StudentProgress.objects.filter(
@@ -236,21 +268,59 @@ def quiz_finished(request, subject_id):
 def submit_answer(request, question_id):
     student = request.user
     question = get_object_or_404(Question, id=question_id)
-    answer = request.POST.get("answer")  # 'A', 'B', or 'C'
-    correct = (answer == question.correct_option)
 
-    # ✅ Keep your existing progress model
+    # make sure it's a POST
+    if request.method != "POST":
+        return redirect("take_quiz", subject_id=question.subject.id)
+
+    answer = request.POST.get("answer")
+    # debug: print what was received
+    print(f"[submit_answer] user={student.username} question_id={question_id} answer={answer} correct_option={question.correct_option}")
+
+    is_correct = (answer == question.correct_option)
+
+    # Save progress
     StudentProgress.objects.update_or_create(
         student=student,
         question=question,
-        defaults={"answered_correctly": correct}
+        defaults={"answered_correctly": is_correct}
     )
 
-    # ✅ Update adaptive stats & mastery
-    record_attempt(student, question, correct)
+    # Update adaptive bookkeeping
+    record_attempt(student, question, is_correct)
 
-    # Redirect to next adaptive question
+    # Put last answered question id in session (so candidate_item can exclude it)
+    request.session["last_question_id"] = question.id
+
+    # optional user feedback
+    if is_correct:
+        messages.success(request, "Bonne réponse !")
+    else:
+        messages.error(request, "Mauvaise réponse. Essaye encore.")
+
+    # redirect to the quiz (will pick next question)
     return redirect("take_quiz", subject_id=question.subject.id)
+
+def restart_quiz(request, subject_id):
+    student = request.user
+    subject = get_object_or_404(Subject, id=subject_id)
+
+    # delete student progress for this subject
+    StudentProgress.objects.filter(student=student, question__subject=subject).delete()
+
+    # reset per-item stats
+    ItemStats.objects.filter(learner=student, question__subject=subject).update(
+        shown_cnt=0, correct_cnt=0, incorrect_cnt=0, last_seen_at=None
+    )
+
+    # reset learner topics
+    lts = LearnerTopic.objects.filter(learner=student, topic__subject=subject)
+    lts.update(p_mastery=0.2, unlocked=True, last_seen_at=None)
+
+    # re-seed (idempotent)
+    initialize_learner(student, subject)
+
+    return redirect("take_quiz", subject_id=subject.id)
 
 def subject_choose(request):
     subjects = Subject.objects.all()
