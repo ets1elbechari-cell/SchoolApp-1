@@ -109,6 +109,8 @@ class StudentProgress(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
     answered_correctly = models.BooleanField(default=False)
     answered_at = models.DateTimeField(auto_now_add=True)
+    explanation_shown = models.BooleanField(default=False)
+
 
     class Meta:
         unique_together = ('student', 'question')  # avoid duplicates

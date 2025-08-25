@@ -2,6 +2,7 @@
 from django.utils.timezone import now
 from .models import LearnerTopic, ItemStats, Question, StudentProgress, Topic
 from quiz_app.models import UserProfile
+from django.db import transaction
 
 DEFAULT_MASTERY = 0.2
 
@@ -53,10 +54,7 @@ def choose_difficulty(p_mastery):
     else:
         return [2, 3]      # Medium, Hard
 
-# engine.py (replace candidate_item + record_attempt)
-
 def _get_base_queryset_for_learner(learner, topic):
-    # prefer learner level if exists, else all subject questions
     level = None
     try:
         level = learner.userprofile.school_level
@@ -72,103 +70,107 @@ def _get_base_queryset_for_learner(learner, topic):
     else:
         base_qs = Question.objects.filter(subject=topic.subject)
 
-    # prefer topic-specific if the Question model has a topic FK
     if hasattr(Question, "topic"):
         base_qs = base_qs.filter(topic=topic)
 
     return base_qs
 
-def candidate_item(learner, topic, difficulties, exclude_ids=None):
+def candidate_item(learner, subject, difficulties=None):
     """
-    Robust candidate picker:
-    - exclude questions answered correctly by learner
-    - exclude recent items for learner (last 10)
-    - exclude optional exclude_ids (e.g. last answered question from session)
-    - penalize by shown_cnt and randomize tie
+    Return one unanswered-by-correct question for the learner for given subject (prefer learner level).
+    If difficulties is provided, try that first, otherwise use any difficulty.
+    Returns Question or None if none remain.
     """
-    if exclude_ids is None:
-        exclude_ids = []
+    # get learner's level safely
+    level = None
+    try:
+        level = learner.userprofile.school_level
+    except Exception:
+        level = None
 
-    # recent IDs for this learner & subject
-    recent_ids = list(
-        ItemStats.objects
-                 .filter(learner=learner, question__subject=topic.subject)
-                 .order_by("-last_seen_at")
-                 .values_list("question_id", flat=True)[:10]
-    )
+    # prefer questions matching the learner's level if any exist
+    if level:
+        qs_level = Question.objects.filter(subject=subject, school_level=level)
+        base_qs = qs_level if qs_level.exists() else Question.objects.filter(subject=subject)
+    else:
+        base_qs = Question.objects.filter(subject=subject)
 
-    # ids of questions learner already answered correctly (for this subject)
+    # IDs of questions the learner already answered correctly (for this subject)
     answered_correct_ids = list(
         StudentProgress.objects
-                       .filter(student=learner, answered_correctly=True, question__subject=topic.subject)
-                       .values_list("question_id", flat=True)
+            .filter(student=learner, answered_correctly=True, question__subject=subject)
+            .values_list("question_id", flat=True)
     )
 
-    # combined set to exclude
-    combined_exclude = set(recent_ids) | set(answered_correct_ids) | set([i for i in exclude_ids if i])
+    # Remove already-correct questions
+    candidate_qs = base_qs.exclude(id__in=answered_correct_ids)
 
-    # debug: print to server log
-    print("[candidate_item] recent_ids:", recent_ids)
-    print("[candidate_item] answered_correct_ids:", answered_correct_ids)
-    print("[candidate_item] exclude_ids param:", exclude_ids)
-    print("[candidate_item] combined_exclude:", combined_exclude)
+    # If difficulties specified, prefer those
+    if difficulties:
+        dq = candidate_qs.filter(difficulty__in=difficulties)
+        if dq.exists():
+            candidate_qs = dq
 
-    base_qs = _get_base_queryset_for_learner(learner, topic)
-    # always exclude already-correct + combined_exclude
-    qs_filtered = base_qs.exclude(id__in=combined_exclude).filter(difficulty__in=difficulties)
-
-    if not qs_filtered.exists():
-        qs_filtered = base_qs.exclude(id__in=combined_exclude)
-
-    if not qs_filtered.exists():
-        # last resort try any question in subject but still exclude correct answers
-        qs_filtered = Question.objects.filter(subject=topic.subject).exclude(id__in=answered_correct_ids)
-
-    if not qs_filtered.exists():
-        # nothing to show
-        print("[candidate_item] no candidate found after filtering.")
+    # If nothing left, return None
+    if not candidate_qs.exists():
         return None
 
-    # Build scored list penalizing shown_cnt
+    # Build scored list (penalize shown_cnt)
     items = []
-    for q in qs_filtered:
-        stats, _ = ItemStats.objects.get_or_create(learner=learner, question=q,
-                                                   defaults={"shown_cnt": 0, "correct_cnt": 0, "incorrect_cnt": 0})
+    for q in candidate_qs:
+        stats, _ = ItemStats.objects.get_or_create(
+            learner=learner,
+            question=q,
+            defaults={"shown_cnt": 0, "correct_cnt": 0, "incorrect_cnt": 0, "last_seen_at": None}
+        )
         score = 1.0 / (1 + (stats.shown_cnt or 0))
         items.append((q, score))
 
-    if not items:
-        return None
-
+    # pick one among highest-scoring (tie-break random)
     items.sort(key=lambda x: x[1], reverse=True)
     top_score = items[0][1]
     top_items = [q for q, s in items if s == top_score]
-
-    import random
-    chosen = random.choice(top_items)
-    print("[candidate_item] chosen_id:", chosen.id)
-    return chosen
-
+    return random.choice(top_items)
+import random
 
 def record_attempt(learner, question, is_correct):
-    # update per-question stats (always do this)
-    stats, _ = ItemStats.objects.get_or_create(learner=learner, question=question,
-                                               defaults={"shown_cnt": 0, "correct_cnt": 0, "incorrect_cnt": 0})
-    # ensure integers
-    stats.shown_cnt = (stats.shown_cnt or 0) + 1
-    stats.last_seen_at = now()
-    if is_correct:
-        stats.correct_cnt = (stats.correct_cnt or 0) + 1
-    else:
-        stats.incorrect_cnt = (stats.incorrect_cnt or 0) + 1
-    stats.save()
+    """
+    Always update ItemStats. Also update / create LearnerTopic even if question.topic is None.
+    """
+    try:
+        with transaction.atomic():
+            stats, _ = ItemStats.objects.get_or_create(
+                learner=learner,
+                question=question,
+                defaults={"shown_cnt": 0, "correct_cnt": 0, "incorrect_cnt": 0, "last_seen_at": None}
+            )
+            # increment counters defensively
+            stats.shown_cnt = (stats.shown_cnt or 0) + 1
+            stats.last_seen_at = now()
+            if is_correct:
+                stats.correct_cnt = (stats.correct_cnt or 0) + 1
+            else:
+                stats.incorrect_cnt = (stats.incorrect_cnt or 0) + 1
+            stats.save()
 
-    # update LearnerTopic if question.topic exists
-    if hasattr(question, "topic") and question.topic is not None:
-        lt, _ = LearnerTopic.objects.get_or_create(
-            learner=learner, topic=question.topic,
-            defaults={"p_mastery": 0.2, "unlocked": True}
-        )
-        lt.p_mastery = max(0.0, min(1.0, lt.p_mastery + (0.05 if is_correct else -0.02)))
-        lt.last_seen_at = now()
-        lt.save()
+            # Update LearnerTopic: if question has topic use it, otherwise try to pick a default
+            topic_obj = getattr(question, "topic", None)
+            if topic_obj is None:
+                # optional: try to find a topic for this subject (e.g., a 'General' topic)
+                # topic_obj = Topic.objects.filter(subject=question.subject).first()
+                pass
+
+            if topic_obj:
+                lt, _ = LearnerTopic.objects.get_or_create(
+                    learner=learner,
+                    topic=topic_obj,
+                    defaults={"p_mastery": 0.2, "unlocked": True}
+                )
+                lt.p_mastery = max(0.0, min(1.0, lt.p_mastery + (0.05 if is_correct else -0.02)))
+                lt.last_seen_at = now()
+                lt.save()
+
+    except Exception as e:
+        # log error (so we can see it)
+        print("[record_attempt] error:", e)
+        raise

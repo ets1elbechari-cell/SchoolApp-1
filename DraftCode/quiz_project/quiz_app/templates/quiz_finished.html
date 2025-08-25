@@ -1,23 +1,21 @@
-
 {% block content %}
-<div style="max-width:600px;margin:50px auto;text-align:center;padding:20px;border:1px solid #ccc;border-radius:10px;">
-    <h2>🎉 Quiz Completed!</h2>
-<p>Congratulations, you have completed all the questions for {{ subject }} ({{ level }})</p>
+<div style="max-width:700px;margin:30px auto;padding:20px;border:1px solid #ddd;border-radius:8px;text-align:center;">
+  <h2>🎉 Quiz Completed!</h2>
+  <p>Subject: {{ subject.name }}</p>
 
-    {% if total_questions and correct_answers %}
-    <p>Your Score: {{ correct_answers }} / {{ total_questions }}</p>
-    {% endif %}
-    <form method="post" action="{% url 'restart_quiz' subject.id %}">
+  {% if total_questions %}
+    <p>Your score: <strong>{{ correct_answers }}</strong> / <strong>{{ total_questions }}</strong></p>
+    {% with percent=correct_answers|floatformat:2 %}
+    <!-- optional: show percent -->
+    {% endwith %}
+  {% else %}
+    <p>No questions were configured for this subject.</p>
+  {% endif %}
+
+  <a href="{% url 'subject_choose' %}" class="btn">Back to Subjects</a>
+  <form method="post" action="{% url 'restart_quiz' subject.id %}" style="display:inline;margin-left:10px;">
     {% csrf_token %}
-    <button type="submit" class="btn btn-primary">
-        🔄 Restart Quiz
-    </button>
-</form>
-
-
-    <a href="{% url 'subject_choose' %}" style="display:inline-block;margin-top:20px;padding:10px 20px;background-color:#2196F3;color:white;border-radius:5px;text-decoration:none;">
-        Back to Subjects
-    </a>
+    <button type="submit" class="btn">Restart Quiz</button>
+  </form>
 </div>
 {% endblock %}
-

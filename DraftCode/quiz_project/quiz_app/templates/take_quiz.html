@@ -34,10 +34,11 @@
         <button type="submit" style="margin-top:15px;padding:10px 20px;background-color:#4CAF50;color:white;border:none;border-radius:5px;">Submit Answer</button>
     </form>
 
-    {% if question.explanation %}
-    <div style="margin-top:20px;padding:10px;background-color:#f9f9f9;border-left:4px solid #2196F3;">
-        <strong>Tip/Explanation:</strong> {{ question.explanation }}
-    </div>
+    {% if show_explanation and question.explanation %}
+       <section class="explanation" style="margin-top:1rem;padding:10px;border-left:4px solid #ddd;background:#f9f9f9;">
+            <h4>Explanation</h4>
+            <p>{{ question.explanation|linebreaks }}</p>
+        </section>
     {% endif %}
 </div>
 {% endblock %}

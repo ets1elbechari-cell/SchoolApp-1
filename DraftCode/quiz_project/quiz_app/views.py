@@ -1,5 +1,7 @@
 from pyexpat.errors import messages
 from turtle import lt
+from django.utils.timezone import now
+from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from .forms import SubjectForm  # You'll need to create a SubjectForm
@@ -194,112 +196,111 @@ def take_quiz(request, subject_id):
     student = request.user
     subject = get_object_or_404(Subject, id=subject_id)
 
-    # ensure user profile and school level exist
+    # OPTIONAL: difficulties selection could be based on LearnerTopic; for simplicity, we pass None
+    question = candidate_item(student, subject, difficulties=None)
+
+    if not question:
+        # No remaining unanswered-by-correct questions -> finished
+        return redirect("quiz_finished", subject_id=subject.id)
+    
+    # Determine whether to show explanation:
+    # show explanation only if the learner had answered this question incorrectly before
+    # AND we haven't shown the explanation yet (explanation_shown == False).
     try:
-        level = UserProfile.objects.get(user=student).school_level
-    except UserProfile.DoesNotExist:
-        level = None
+        prog = StudentProgress.objects.get(student=student, question=question)
+    except StudentProgress.DoesNotExist:
+        prog = None
 
-    # create per-user topics/stats if missing
-    initialize_learner(student, subject)
+    show_explanation = False
+    if prog and prog.answered_correctly is False and prog.explanation_shown is False:
+        # mark that we showed the explanation so it won't be shown again repeatedly
+        prog.explanation_shown = True
+        prog.save(update_fields=["explanation_shown"])
+        show_explanation = True
 
-    # pick topic
-    lt = pick_target_topic(student, subject)
-
-    # FALLBACK: if no adaptive topic found, pick ANY topic for subject
-    if not lt:
-        lt = LearnerTopic.objects.filter(learner=student, topic__subject=subject).order_by("last_seen_at").first()
-
-    if not lt:
-        # No topics at all → show friendly message
-        return render(request, "quiz_finished.html", {
-            "message": "No topics/questions available for this subject yet.",
-            "subject": subject
-        })
-
-    difficulties = choose_difficulty(lt.p_mastery)
-    question = candidate_item(student, lt.topic, difficulties)
-
-    # FINAL fallback: if still no question, try any question of subject & level
-    if not question:
-        if level:
-            question = Question.objects.filter(subject=subject, school_level=level).first()
-        else:
-            question = Question.objects.filter(subject=subject).first()
-
-    if not question:
-        return render(request, "quiz_finished.html", {
-            "message": "No questions found for this subject + your level.",
-            "subject": subject
-        })
-
-    # render question
-    return render(request, "take_quiz.html", {"question": question, "subject": subject, "level": level})
-    
-def quiz_finished(request, subject_id):
-    student = request.user
-    subject = Subject.objects.get(id=subject_id)
-    school_level = UserProfile.objects.get(user=student).school_level
-
-    if request.method == "POST" and "restart" in request.POST:
-        # 🗑️ Reset progress for this subject
-        StudentProgress.objects.filter(student=student, question__subject=subject).delete()
-        LearnerTopic.objects.filter(learner=student, topic__subject=subject).delete()
-        return redirect("take_quiz", subject_id=subject.id)
-    
-    initialize_learner(student, subject)
-
-    total_questions = Question.objects.filter(subject=subject, school_level=school_level).count()
-    correct_answers = StudentProgress.objects.filter(
-        student=student, 
-        question__subject=subject, 
-        question__school_level=school_level, 
-        answered_correctly=True
-    ).count()
-
-    return render(request, "quiz_finished.html", {
-        "total_questions": total_questions,
-        "correct_answers": correct_answers,
+    return render(request, "take_quiz.html", {
+        "question": question,
         "subject": subject,
-        "level": school_level
+        "show_explanation": show_explanation
     })
-
 
 def submit_answer(request, question_id):
     student = request.user
     question = get_object_or_404(Question, id=question_id)
 
-    # make sure it's a POST
     if request.method != "POST":
         return redirect("take_quiz", subject_id=question.subject.id)
 
     answer = request.POST.get("answer")
-    # debug: print what was received
-    print(f"[submit_answer] user={student.username} question_id={question_id} answer={answer} correct_option={question.correct_option}")
-
     is_correct = (answer == question.correct_option)
 
-    # Save progress
-    StudentProgress.objects.update_or_create(
-        student=student,
-        question=question,
-        defaults={"answered_correctly": is_correct}
-    )
+    # Save progress and update attempt atomically
+    try:
+        with transaction.atomic():
+            prog, created = StudentProgress.objects.update_or_create(
+                student=student,
+                question=question,
+                defaults={
+                    "answered_correctly": is_correct,
+                    "answered_at": now()
+                }
+            )
 
-    # Update adaptive bookkeeping
-    record_attempt(student, question, is_correct)
+            # If incorrect and you want explanation to show next time, reset flag here
+            # prog.explanation_shown = False
+            # prog.save(update_fields=["explanation_shown"])
 
-    # Put last answered question id in session (so candidate_item can exclude it)
+            # record attempt (updates ItemStats and LearnerTopic)
+            record_attempt(student, question, is_correct)
+
+    except Exception as e:
+        # log exception so we see it in the console
+        print("[submit_answer] error saving progress/attempt:", e)
+        messages.error(request, "Une erreur s'est produite. Réessaie.")
+        return redirect("take_quiz", subject_id=question.subject.id)
+
+    # set last question id into session (helps exclude immediate repeat)
     request.session["last_question_id"] = question.id
 
-    # optional user feedback
+    # user feedback (optional)
     if is_correct:
         messages.success(request, "Bonne réponse !")
     else:
-        messages.error(request, "Mauvaise réponse. Essaye encore.")
+        messages.info(request, "Mauvaise réponse — tu reverras cette question plus tard avec une explication.")
 
-    # redirect to the quiz (will pick next question)
     return redirect("take_quiz", subject_id=question.subject.id)
+
+
+def quiz_finished(request, subject_id):
+    student = request.user
+    subject = get_object_or_404(Subject, id=subject_id)
+
+    # get learner's school level if present
+    try:
+        level = UserProfile.objects.get(user=student).school_level
+    except Exception:
+        level = None
+
+    # total questions considered for this subject (prefer level if exists else all)
+    if level:
+        total_q = Question.objects.filter(subject=subject, school_level=level).count()
+        if total_q == 0:
+            total_q = Question.objects.filter(subject=subject).count()
+    else:
+        total_q = Question.objects.filter(subject=subject).count()
+
+    correct_count = StudentProgress.objects.filter(
+        student=student,
+        question__subject=subject,
+        answered_correctly=True
+    ).count()
+
+    return render(request, "quiz_finished.html", {
+        "total_questions": total_q,
+        "correct_answers": correct_count,
+        "subject": subject,
+        "level": level
+    })
 
 def restart_quiz(request, subject_id):
     student = request.user
